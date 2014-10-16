@@ -1,0 +1,10 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource>
+  <file alias="FastForward.png">images/FastForward.png</file>
+  <file alias="Pause.png">images/Pause.png</file>
+  <file alias="Play.png">images/Play.png</file>
+  <file alias="Record.png">images/Record.png</file>
+  <file alias="Rewind.png">images/Rewind.png</file>
+  <file alias="Stop.png">images/Stop.png</file>
+</qresource>
+</RCC>

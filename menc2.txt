@@ -1,0 +1,3 @@
+   308	9:19	mencoder mf://\*.png -mf w=800:h=600:fps=25:type=png -ovc x264 -x264encopts pass=1:turbo:bitrate=900:bframes=1:me=umh:partitions=all:trellis=1:qp_step=4:qcomp=0.7:direct_pred=auto:keyint=300 -oac copy -o /dev/null
+   315	9:23	mencoder mf://\*.png -o output.mov -mf w=800:h=600:fps=25:type=png -ovc x264 -x264encopts pass=2:turbo:bitrate=900:bframes=1:me=umh:partitions=all:trellis=1:qp_step=4:qcomp=0.7:direct_pred=auto:keyint=300 -oac copy
+

@@ -1,0 +1,7 @@
+200 1
+lw $t0 A($zero)
+lw $t1 B($zero)
+ADD $t2 $t0 $t1
+ADD $t7 $t0 $t1
+ADD $24 $t0 $t1
+JR $31

@@ -1,0 +1,17 @@
+200 4
+# Program to compute average of "Length" numbers in array "d", result in "Avg"
+
+and $6 $6 $zero #Zeroing out register
+lw $7 LENGTH($zero)
+and $8 $8 $zero
+#LABEL:
+@StartLoop
+lw $10 D($6)
+add $8 $8 $10
+sw $8 SUM($zero)
+addi $6 $6 1
+bne $6 $7 @StartLoop
+div $8 $7
+mflo $6
+sw $6 AVG($zero)
+JR 31

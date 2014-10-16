@@ -1,0 +1,8 @@
+200 4
+# Testing mult with add and stuff
+
+lw $t0 A($zero)
+lw $t1 B($zero)
+div $t0 $t1
+add $t2 $t1 $t0
+JR 31

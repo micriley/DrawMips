@@ -1,0 +1,47 @@
+200 4
+lw $t0 A($zero)
+lh $t0 D($zero)
+lb $t0 E($zero)
+@MyLabel
+@MyLabel2
+@MyLabel3
+@MyLabel4
+lbu $t0 E($zero)
+lw $t0 A($zero)
+lw $t1 F($zero)
+lw $t2 F($zero)
+mult $t1 $t2
+lw $t0 A($zero)
+lw $t1 B($zero)
+lw $t2 C($zero)
+add $t3 $t0 $t2
+addu $t4 $t0 $t1
+sub $t5 $t0 $t2
+subu $t6 $t0 $t1
+addi $t7 $t0 -1
+addiu $t3 $t1 -3
+mult $t0 $t2
+multu $t0 $t2
+div $t0 $t1
+divu $t0 $t2
+mfhi $t3
+mflo $t3
+lui $t3
+and $t3 $t0 $t1
+andi $t4 $t0 15
+or $t5 $t0 $t1
+ori $t6 $t0 48
+nor $t7 $t0 $t1
+xori $t2 $t0 $t1
+lw $t1 G($zero)
+sll $t0 $t0 1
+sllv $t0 $t0 $t1
+srl $t0 $t0 1
+srlv $t0 $t0 $t1
+lw $t0 H($zero)
+sra $t0 6
+srav $t0 $t1
+J 1
+AND $t0 $t0 $t0
+lw $t0 I($zero)
+JR $31

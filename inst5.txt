@@ -1,0 +1,15 @@
+200 1
+#Program to computer average of "Length numbers in array "d", result in "Avg"
+#Setup t0,t1,t2 for index,length,sum
+lw $t1 LENGTH($zero)
+and $t2 $t2 $zero
+lw $t4 D($t0)
+add $t2 $t2 $t4
+sw $t2 SUM($zero) #NOTE: Could make the default register zero
+addi $t0 $t0 1 #NOTE: I gotta make constants read in byte,half-words, words, hex form, etc.
+bne $t0 $t1 -5 #NOTE: I gotta add tags. MIPS branches by Word offset + 1 Word (Words are 4 bytes each)
+div $t2 $t1 #NOTE: Devide goes into LO, remainder into HI
+mflo $t0
+sw $t0 Avg($zero)
+add $t0 $t0 $t0
+halt
