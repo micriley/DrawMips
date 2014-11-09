@@ -1,5 +1,5 @@
 // Draw and animate a computer internals
-// George F. Riley, Georgia Tech, Summer 2008
+// Michael K. Riley, Georgia Tech, Summer 2008
 
 #ifndef __CPU__
 #define __CPU__
@@ -15,7 +15,7 @@ class Computer;
 class CPU
 {
 public:
-  CPU(QDisplay& d0, Computer& c,Memory& data);
+  CPU(QDisplay& d0, Computer& c);
   void InitRegisters(unsigned n);  // Number of registers
   void Redraw(QPainter&);          // Redraw for animatin
   void ExecuteNextInstruction();// Read and execute  next instruction
@@ -39,7 +39,6 @@ public:
   Memory*   regTargetObject; //Computer drawing references
   Memory    pcMem;       // Memory object for Program Counter
   Memory    ciMem;       // Memory object for current instruction
-  MemMap_t& labelMap;    // Instruction Label Map for Memory
   QRect     cpuRect;     // Rectangle for CPU
   QRect     titleRect;   // Rect for CPU TItle
   QRect     regTitleRect;// Rect for "Registers"

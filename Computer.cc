@@ -9,6 +9,7 @@
 
 #include "Computer.h"
 #include "Memory.h"
+#include "Parser.h"
 #include "RectHelpers.h"
 #include "qdisplay.h"
 #include "ALU.h"
@@ -17,21 +18,22 @@
 using namespace std;
 
 Computer::Computer(QDisplay& qd,
-                   const string& datamem,
-                   const string& instmem,
+                   const string& input,
                    unsigned nreg)
-  : d(qd),data(MEM_DATA),inst(MEM_INST,0),cpu(qd, *this,inst),myALU(), timeController(this),frameSkip(1), stepType(NONE), nextStepType(NONE), animCount(0)
+  : d(qd),data(MEM_DATA),inst(MEM_INST,0),cpu(qd, *this),myALU(), timeController(this),frameSkip(1), stepType(NONE), nextStepType(NONE), animCount(0)
 {
   QPainter p(d.Pixmap());
-  data.Load(p, datamem,
-            QPoint(16, 32), QRect(0, 0, 64, 16),
-            true,
-           "Data", "Memory");
-  QPoint instPoint(d.width() - 176, 32);
-  inst.Load(p, instmem, 
-            instPoint, QRect(0, 0, 112, 16), 
-            true,
-           "Instruction", "Memory");
+  QPoint dataPoint  = QPoint(16, 32);
+  QRect  dataRect   = QRect(0,0,64,15);
+  data.Load(dataPoint, dataRect,true);
+  QPoint instPoint  = QPoint(d.width() - 176, 32);
+  QRect  instRect   = QRect(0,0,112,16);
+  inst.Load(instPoint, instRect,true);
+  Parser parse(input);
+  parse.ReadMemoryContents(data,inst);
+  data.Draw(p,dataPoint,dataRect,true,"Data","Memory");
+  inst.Draw(p,instPoint,instRect,true,"Instruction","Memory");
+  //Draw(p, where, size, useAddr, t1, t2);
   ComputerBox(p);
   myALU.draw(p);
   p.end();

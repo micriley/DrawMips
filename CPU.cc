@@ -1,5 +1,5 @@
 // Draw and animate a computer internals
-// George F. Riley, Georgia Tech, Summer 2008
+// Michael K. Riley, Georgia Tech, Summer 2008
 
 #include <string>
 #include <math.h>
@@ -23,7 +23,7 @@
 
 #define SSTR( x ) dynamic_cast< std::ostringstream & >(( std::ostringstream() << std::dec << x ) ).str()
   
-CPU::CPU(QDisplay& d0, Computer& c0,Memory& data):d(d0),c(c0),regMem(MEM_REG),pcMem(),ciMem(MEM_INST),labelMap(data.labelMap),pc(0),halted(false)
+CPU::CPU(QDisplay& d0, Computer& c0):d(d0),c(c0),regMem(MEM_REG),pcMem(),ciMem(MEM_INST),pc(0),halted(false)
 {
   cpuRect = QRect(d.width()/2 - d.width() / 8 - d.width() / 16, // x
                   d.height()  / 8 - d.height()/16,              // y
@@ -34,9 +34,6 @@ CPU::CPU(QDisplay& d0, Computer& c0,Memory& data):d(d0),c(c0),regMem(MEM_REG),pc
   p.drawRect(cpuRect);
   titleRect = QRect(cpuRect.x(), cpuRect.y() - 16, cpuRect.width(), 16);
   p.drawText(titleRect, Qt::AlignCenter, "CPU");
-  regMem.LoadEmpty(32);
-  pcMem.LoadEmpty(1);
-  ciMem.LoadEmpty(1);
   d.Update();
   regSourceObject = &regMem;
   regTargetObject = &regMem;
@@ -49,7 +46,8 @@ void CPU::InitRegisters(unsigned n)
   QRect  size1(where1.x(), where1.y(), cpuRect.width() - 8, 16);
   // Draw the current instruction register first then others below
   QRect cTxt = p.boundingRect(size1, Qt::AlignCenter, "Current Instruction");
-  ciMem.Draw(p, where1, size1, 1, 0, false, "Current Instruction");
+  ciMem.LoadEmpty(1, where1, size1, true);
+  ciMem.Draw(p, where1, size1, false, "Current Instruction");
   ciTitleRect = cTxt;
   
   // Now program counter
@@ -58,7 +56,8 @@ void CPU::InitRegisters(unsigned n)
   where2.setY(where2.y() + cTxt.height() + size1.height() + 8);
   size2.moveTo(where2);
   cTxt = p.boundingRect(size2, Qt::AlignCenter, "PC");
-  pcMem.Draw(p, where2, size2, 1, 0, false, "PC");
+  pcMem.LoadEmpty(1, where2, size2, true);
+  pcMem.Draw(p, where2, size2, false, "PC");
   // Set the initial PC to the first address of inst memory
   SetPC(c.inst.firstAddress);
   pcTitleRect = cTxt;
@@ -70,7 +69,8 @@ void CPU::InitRegisters(unsigned n)
   size2.moveTo(where3);
   cTxt = p.boundingRect(size2, Qt::AlignCenter, "Registers");
   size3.setWidth(size3.width() - 12);
-  regMem.Draw(p, where3, size3, n, 0, true, "Registers");
+  regMem.LoadEmpty(n, where3, size3, true);
+  regMem.Draw(p, where3, size3, true, "Registers");
   regTitleRect = cTxt;
 
   d.Update();
@@ -921,11 +921,6 @@ void CPU::FinishAnim()
 
 int CPU::offsetToLabel(std::string label)
 {
-  cout << "Keys in LabelMap" << endl;
-  for(map<std::string,MemoryLocation>::iterator it = labelMap.begin(); it != labelMap.end(); ++it)
-  {
-    cout << it->first << endl;
-  }
-  MemoryLocation ml = labelMap[label];
+  MemoryLocation ml = Memory::labelMap[label];
   return (ml.index*c.inst.addressAdder + c.inst.firstAddress) - pc;
 }

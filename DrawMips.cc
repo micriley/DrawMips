@@ -21,12 +21,10 @@ int main(int argc, char** argv)
   d.Show();
   d.paused = true;
   d.paused = false;
-  string memFile("mem1.txt");
-  string instFile("inst1.txt");
-  if (argc > 1) memFile = string(argv[1]);
-  if (argc > 2) instFile = string(argv[2]);
+  string input("mem1.txt");
+  if (argc > 1) input = string(argv[1]);
   //Computer c(d, memFile.c_str(),instFile.c_str(), 8);
-  Computer c(d, memFile.c_str(),instFile.c_str(), 32);
+  Computer c(d, input.c_str(), 32);
   //d->Pixmap()->save("computer.jpg");
   //exit(1);
 

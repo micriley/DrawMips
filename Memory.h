@@ -81,19 +81,20 @@ class Memory
   public:
   Memory(MemType_t = MEM_DATA,int sML = -1);
 
-  void LoadEmpty(unsigned i);
-  void Load(QPainter& p, const std::string& fileName,
-            const QPoint&, const QRect&,
+  void Load(const QPoint&, const QRect&,
+            bool useAddr);
+  void LoadEmpty(unsigned n, const QPoint&, const QRect&, bool useAddr);
+  void Draw(QPainter& p, QPoint& where, QRect& size,
             bool useAddr,
-            const std::string& t1 = std::string(),    // Title1
-            const std::string& t2 = std::string());    // Title2
-  void Draw(QPainter& p, QPoint& where, const QRect& size,
-            unsigned n, unsigned first, bool useAddr,
             const std::string& t1 = std::string(),    // Title1
             const std::string& t2 = std::string());   // Title2
   void Redraw(QPainter& p);
+  void AddEmptyMemBlock(unsigned& lineNum);
+  void AddMemBlock(MemoryLocation& ml, unsigned& lineNum);
   Contents GetContents(unsigned i);
   MemoryLocation* GetLocation(unsigned i);
+  MemoryLocation* GetFront();
+  MemoryLocation* GetBack();
   void SetContents(const Contents& c, unsigned i);
   void SetContentsInt(int v, unsigned i);
   void SetContentsString(const std::string& v, unsigned i);
@@ -123,9 +124,9 @@ public:
   std::string title2;
   QRect  title1Rect;
   QRect  title2Rect;
-  MemMap_t    labelMap;
-private:
+  static MemMap_t    labelMap;
   MemVec_t    memory;      // The actual memory
+private:
   MemVec_t    windowRects;
   bool        useAddress;  // True if need to use address labels
   MemType_t   memoryType;

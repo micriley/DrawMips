@@ -81,7 +81,7 @@ public:
   } AnimALUStruct;
 public:
   Computer(QDisplay&,
-           const std::string& dataMem, const std::string& instMem, 
+           const std::string& input,
            unsigned nReg);
   void LoadDataMem(const std::string& fileName,
             const std::string& t1 = std::string(),    // Title1

@@ -212,6 +212,7 @@ char MemoryLocation::GetContentsChar() const
   return contents.c;
 }
 
+MemMap_t Memory::labelMap;
 
 Memory::Memory(MemType_t mt, int sML)
   : useAddress(true), memoryType(mt), firstAddress(0), addressAdder(1),  selectedMemLocation(sML)
@@ -219,40 +220,38 @@ Memory::Memory(MemType_t mt, int sML)
   window = (unsigned int*)malloc(2);
 }
 
-void Memory::LoadEmpty(unsigned i)
-{
-  while(memory.size() < i)
-    memory.push_back(MemoryLocation());
-}
-
-void Memory::Load(QPainter& p, const string& fileName,
-                  const QPoint& wh, const QRect& sz,
-                  bool useAddr,
-                  const string& t1, const string& t2)
+void Memory::LoadEmpty(unsigned n, const QPoint& wh, const QRect& sz, bool useAddr)
 {
   useAddress = useAddr;
   where = wh;
   size = sz;
-  ReadMemoryContents(fileName);
-  // Find the largest rectangle needed for contents
-  int widest = size.width();
-  for (unsigned i = 0; i < memory.size(); ++i)
-    {
-      string contents = memory[i].GetContentsString();
-      QRect r = p.boundingRect(size, Qt::AlignCenter, contents.c_str());
-      if (r.width() > widest) widest = r.width();
-    }
-  size.setWidth(widest);
-  // Draw the memory array
-  Draw(p, where, size, memory.size(), firstAddress, useAddr, t1, t2);
+  for(unsigned i = 0; i < n; ++i)
+  {
+    if(i == memory.size())
+      memory.push_back(MemoryLocation());
+  }
 }
 
-void Memory::Draw(QPainter& p, QPoint& where, const QRect& size,
-                  unsigned n, unsigned first, bool useAddr,
-                  const string& t1, const string& t2)
-{ // where is in/out, in case we have to move contents/rects left due to size
+void Memory::Load(const QPoint& wh, const QRect& sz, bool useAddr)
+{
   useAddress = useAddr;
-  firstAddress = first;
+  where = wh;
+  size = sz;
+  
+}
+
+void Memory::Draw(QPainter& p, QPoint& where, QRect& size,
+                  bool useAddr, const string& t1, const string& t2)
+{ // where is in/out, in case we have to move contents/rects left due to size
+  int widest = size.width();
+  for (unsigned i = 0; i < memory.size(); ++i)
+  {
+    string contents = memory[i].GetContentsString();
+    QRect r = p.boundingRect(size, Qt::AlignCenter, contents.c_str());
+    if (r.width() > widest) widest = r.width();
+  }
+  size.setWidth(widest);
+  useAddress = useAddr;
   title1 = t1;
   title2 = t2;
   //cout << "t1 " << t1 << " t2 " << t2 << endl;
@@ -261,15 +260,14 @@ void Memory::Draw(QPainter& p, QPoint& where, const QRect& size,
   int widestAddress = 0;
   int widestContents = 0;
   unsigned extraRect = memoryType == MEM_REG ? 2 : 0;
-  for(unsigned i = 0; i < n + extraRect; ++i)
+  for(unsigned i = 0; i < extraRect; ++i)
   {
-    if(i == memory.size())
     memory.push_back(MemoryLocation());
   }
-  for (unsigned i = 0; i < n + extraRect; ++i)
+  for (unsigned i = 0; i < memory.size(); ++i)
   {
     ostringstream oss;
-    oss << i + first;
+    oss << (i*addressAdder + firstAddress);
     QRect br = p.boundingRect(size, Qt::AlignCenter, oss.str().c_str());
     if (br.width() > widestAddress) widestAddress = br.width();
     MemoryLocation& ml = memory[i];
@@ -315,7 +313,7 @@ void Memory::Draw(QPainter& p, QPoint& where, const QRect& size,
   }
   // Draw the rectangles
   unsigned thisAddress = 0; // This still needs some work
-  for (unsigned i = 0; i < n + extraRect; ++i)
+  for (unsigned i = 0; i < memory.size(); ++i)
   {
     ostringstream oss;
     oss << thisAddress + firstAddress;
@@ -396,6 +394,20 @@ void Memory::Redraw(QPainter& p)
   p.setPen(Qt::black);
 }
 
+void Memory::AddEmptyMemBlock(unsigned& lineNum)
+{
+  memory.push_back(MemoryLocation());
+  memory.back().sourceLine = lineNum;
+  memory.back().index = memory.size() - 1;
+}
+
+void Memory::AddMemBlock(MemoryLocation& ml, unsigned& lineNum)
+{
+  memory.push_back(ml);
+  memory.back().sourceLine = lineNum;
+  memory.back().index = memory.size() - 1;
+}
+
 Contents Memory::GetContents(unsigned i)
 {
   return GetLocation(i)->contents;
@@ -404,6 +416,16 @@ Contents Memory::GetContents(unsigned i)
 MemoryLocation* Memory::GetLocation(unsigned i)
 {
   return &memory[(i - firstAddress)/addressAdder];
+}
+
+MemoryLocation* Memory::GetFront()
+{
+  return &memory[0];
+}
+
+MemoryLocation* Memory::GetBack()
+{
+  return &memory[memory.size() - 1];
 }
 
 string Memory::GetContentsString(unsigned i)
@@ -519,25 +541,27 @@ void Memory::SetContentsString(const string& v, unsigned i)
   ml->SetContentsString(v);
 }
 
+//Root Parsing function, splits off to read insts and data
+
 
 // Private methods
-
 // File format is:
 // memoryAddressOffset
 // contents (repeated n times)
 // # are comments
 void Memory::ReadMemoryContents(const string& fileName)
 {
+  //Intialize start state
   unsigned lineNum = 1;
   bool labelNextLine = false;
   std::string label;
+  //Open file
   ifstream ifs(fileName.c_str());
   if (!ifs)
     {
       cout << "Can't open file " << fileName << endl;
       exit(1);
     }
-  //cout << "Reading memory contents from file " << fileName << endl;
   ifs >> firstAddress; // Get address offset
   addressAdder = 0;
   ifs >> addressAdder; // and increment
@@ -558,7 +582,6 @@ void Memory::ReadMemoryContents(const string& fileName)
       {
         int length = tokens[0].size();
         label = tokens[0].substr(1,length);
-        cout << "Found a @Label. Label Name: " << label << endl;
         labelNextLine = true;
         continue;
       }
@@ -570,7 +593,7 @@ void Memory::ReadMemoryContents(const string& fileName)
       //If we allready have a label picked out, set the label to  what we found last line
       if(labelNextLine)
       {
-        labelMap[label] = memory.back();
+        Memory::labelMap[label] = memory.back();
         memory.back().SetLabel(label);
         labelNextLine = false;
         continue;
