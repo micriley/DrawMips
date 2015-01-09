@@ -7,7 +7,7 @@
 
 #include <qrect.h>
 
-#define VIEW_SIZE 7
+#define VIEW_SIZE 99999
 
 class QPainter;
 class QPoint;
