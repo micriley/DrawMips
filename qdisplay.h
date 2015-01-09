@@ -2,8 +2,8 @@
 // George F. Riley, Georgia Tech, Spring 2004
 // ECE3090
 
-#include <Qt/qapplication.h>
-#include <Qt/qmainwindow.h>
+#include <qapplication.h>
+#include <qmainwindow.h>
 #include <pthread.h>
 
 class QTimer;

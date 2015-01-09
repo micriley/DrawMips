@@ -840,8 +840,8 @@ void CPU::ExecuteNextInstruction()
   break;
   case JR:
     reg0 = currentInst.GetReg(0);
-    SetPC(reg0);
-    if(reg0 == 31) exit(1);
+		if(reg0 == 31) c.stepType = Computer::NONE;
+		else SetPC(reg0);
   break;
   case JAL:
     const1 = currentInst.GetOptype(0) == OP_AddressTag ? offsetToLabel(currentInst.GetAddress(0)) : currentInst.GetConst(0);
