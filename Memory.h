@@ -79,7 +79,7 @@ typedef enum {
 class Memory
 {
   public:
-  Memory(MemType_t = MEM_DATA,int sML = -1);
+  Memory(MemType_t = MEM_DATA,int fA = 0, int aA = 1,int sML = -1);
 
   void Load(const QPoint&, const QRect&,
             bool useAddr);
@@ -110,12 +110,11 @@ class Memory
   QPoint GetLeftCenter(unsigned i);
   QPoint GetRightCenter(unsigned i);
   QPoint GetPointOnMemLoc(unsigned i,float x,float y);
-  unsigned FindAddressTag(const std::string&);
+  int FindAddressTag(const std::string&);
   void ParseLine(const std::string&, StringVec_t&);
   unsigned* updateRangeToShow();
   QPoint GetLockedLeftCenter(unsigned i);
 private:
-  void ReadMemoryContents(const std::string& fileName);
   void storeWindowRect(unsigned n);
 public:
   QPoint where;  // Upper left

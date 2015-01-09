@@ -17,22 +17,41 @@
 
 using namespace std;
 
+#define DATA_NORMAL_X_POS  0.01
+#define DATA_NORMAL_Y_POS	0.0625
+#define DATA_NORMAL_WIDTH  0.125
+#define DATA_NORMAL_HEIGHT 0.25
+
+#define INST_NORMAL_X_POS  0.75
+#define INST_NORMAL_Y_POS	0.0625
+#define INST_NORMAL_WIDTH  0.125
+#define INST_NORMAL_HEIGHT 0.25
+
 Computer::Computer(QDisplay& qd,
                    const string& input,
-                   unsigned nreg)
-  : d(qd),data(MEM_DATA),inst(MEM_INST,0),cpu(qd, *this),myALU(), timeController(this),frameSkip(1), stepType(NONE), nextStepType(NONE), animCount(0)
+                   unsigned nreg,
+									 int fs)
+  : d(qd),data(MEM_DATA,1000,4),inst(MEM_INST,100,4,100),cpu(qd, *this),myALU(),frameSkip(fs), stepType(NONE), nextStepType(NONE), animCount(0)
 {
   QPainter p(d.Pixmap());
-  QPoint dataPoint  = QPoint(16, 32);
-  QRect  dataRect   = QRect(0,0,64,15);
+  QPoint dataPoint  = QPoint(d.width()*DATA_NORMAL_X_POS,
+														 d.height()*DATA_NORMAL_Y_POS);
+  QRect  dataRect   = QRect(0,
+													  0,
+														d.width()*DATA_NORMAL_WIDTH,
+														16);
   data.Load(dataPoint, dataRect,true);
-  QPoint instPoint  = QPoint(d.width() - 176, 32);
-  QRect  instRect   = QRect(0,0,112,16);
+	QPoint instPoint  = QPoint(d.width()*INST_NORMAL_X_POS,
+														 d.height()*INST_NORMAL_Y_POS);
+  QRect  instRect   = QRect(0,
+													  0,
+														d.width()*INST_NORMAL_WIDTH,
+														16);
   inst.Load(instPoint, instRect,true);
   Parser parse(input);
   parse.ReadMemoryContents(data,inst);
-  data.Draw(p,dataPoint,dataRect,true,"Data","Memory");
-  inst.Draw(p,instPoint,instRect,true,"Instruction","Memory");
+  data.Draw(p,dataPoint,dataRect,true,"Data");
+  inst.Draw(p,instPoint,instRect,true,"Instruction");
   //Draw(p, where, size, useAddr, t1, t2);
   ComputerBox(p);
   myALU.draw(p);
@@ -424,15 +443,15 @@ void Computer::Step()
     }
     case START_RNI:
     {
-      cpu.pc += inst.addressAdder;
-      inst.selectedMemLocation = (cpu.pc-inst.firstAddress)/inst.addressAdder; //We set the selected inst memory this way to account for jumps
-      inst.updateRangeToShow();
       Redraw(p);
       stepType = RNI;
       break;
     }
     case RNI:
     {
+			cpu.pc += inst.addressAdder;
+      inst.selectedMemLocation = (cpu.pc-inst.firstAddress)/inst.addressAdder; //We set the selected inst memory this way to account for jumps
+			inst.updateRangeToShow();
       anim0 = cpu.pcMem.GetTopCenter(0);
       anim1 = inst.GetLockedLeftCenter(cpu.pc);
       anim2 = cpu.ciMem.GetTopCenter(0);
@@ -510,7 +529,7 @@ void Computer::Redraw(QPainter& p)
   inst.Redraw(p);
   cpu.Redraw(p);
   myALU.Redraw(p);
-  timeController.Redraw(p);
+
 }
 
 void Computer::ComputerBox(QPainter& p)

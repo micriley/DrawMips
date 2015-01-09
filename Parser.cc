@@ -33,11 +33,11 @@ void Parser::ReadMemoryContents(Memory& data, Memory& inst)
     lineNum++;
     ParseLine(line, tokens);
     if(tokens.empty()) continue;
-    if(ParseLabel(tokens)) continue;
-    if(tokens[0] == ".alloc")
-      Alloc(data,inst);
-    if(tokens[0] == ".word")
-      Words(data,inst);
+		ParseLabel(tokens);
+//    if(tokens[0] == ".alloc")
+//      Alloc(data,inst);
+//    if(tokens[0] == ".word")
+//      Words(data,inst);
     if(state == P_INST)
       ReadInstContent(inst);
     if(state == P_DATA)
@@ -114,30 +114,58 @@ void Parser::ReadInstContent(Memory& inst)
 {
   if(tokens.size() > 4)
     Parser::exitWithOutput("Found more than 4 tokens on a text line. Please format your lines as [Instruction/Mandatory] [Output Register][Param1/Mandatory] [Param2/Optional]");
-  ReadContent(inst);
   ostringstream s;
-  for(unsigned i = 0; i< tokens.size(); ++i)
+  for(unsigned i = labelNextLine ? 1 : 0; i < tokens.size(); ++i)
   {
     s << tokens[i];
     if(i != tokens.size() - 1)
       s << " ";
   }
+  ReadContent(inst);
   inst.memory.back().SetContentsGeneric(s.str()); //Might have to mess with this some.
   return;
 }
 void Parser::ReadDataContent(Memory& data)
 {
+	std::string targetToken("");
+	if(tokens.size() == 1)
+	{
+		if(!isNumber(tokens[0])) Parser::exitWithOutput("Found a singular data token that was Not a Number.");
+		targetToken = tokens[0];
+	}
+	if(tokens.size() == 2)
+	{
+		if((isNumber(tokens[0]) && isNumber(tokens[1])) || (!isNumber(tokens[0]) && !isNumber(tokens[1])))
+		{
+			Parser::exitWithOutput("Found 2 data tokens and expected a key + a number value");
+		}
+		if(isNumber(tokens[0]))
+		{
+			targetToken = tokens[0];
+			nextLabel = tokens[1];
+		}
+		else
+		{
+			targetToken = tokens[1];
+			nextLabel = tokens[0];
+		}
+	}
   if(tokens.size() > 2)
   {
-    Parser::exitWithOutput("Found more than 2 tokens on a data line. Please format your lines as [Value/Mandatory] [Label/Optional]");
-  return;
+		if(isNumber(tokens[0]))
+		{
+	    Parser::exitWithOutput("Found more than 2 tokens on a data line and expected the first token to be a key-label");
+		}
+		labelNextLine = true;
+		nextLabel = tokens[0];
+    int allocPos = contains(tokens, std::string(".alloc"));
+		int wordPos  = contains(tokens, std::string(".word"));
+		if(allocPos != -1){ Alloc(data, allocPos); return; } // The Return is a concession to complex alloc words. If you do that then this parser won't handle it
+		if(wordPos != -1){ Words(data,wordPos); return; }
   }
   ReadContent(data);
-  data.memory.back().SetContentsGeneric(tokens[0]);
-  if(tokens.size() > 1)
-  {
-    data.memory.back().SetLabel(tokens[1]);
-  }
+  data.memory.back().SetContentsGeneric(targetToken);
+  FindLabel(data);
 }
 
 void Parser::ReadContent(Memory& memTarget)
@@ -147,57 +175,57 @@ void Parser::ReadContent(Memory& memTarget)
   FindLabel(memTarget);
 }
 
-void Parser::Alloc(Memory& data,Memory& inst)
+void Parser::Alloc(Memory& data, unsigned allocPos)
 {
-  Memory& memTarget = state == P_INST ? inst : data; // hack around because references must be initialized immediately
   switch(state)
   {
     case P_INST:
     case P_DATA:
       break;
     case P_INST_HEADER:
+			exitWithOutput("Found an .alloc tag, but expecting a full .text header line.");
     case P_DATA_HEADER:
-      exitWithOutput("Found an .alloc tag, but expecting the header values [firstAddress] [Bytes per address] before defining an alloc.");
+      exitWithOutput("Found an .alloc tag, but expecting a full .data header line.");
       break;
     case P_NONE:
       exitWithOutput("Found an .alloc tag, but we're not in a .data or .text block.");
       break;
   }
-  if(!isNumber(tokens[1]))
+	if(tokens.size() < allocPos + 1)
+		exitWithOutput("Found an .alloc tag, but missing the number of words to allocate");
+  if(!isNumber(tokens[allocPos + 1]))
   {
     ostringstream s;
-    s << tokens[1] << " is not a number. Please use the format .alloc [integer].";
+    s << tokens[allocPos + 1] << " is not a number. Please use the format .alloc [integer].";
     exitWithOutput(s.str());
     return;
   }
-  unsigned n = atoi(tokens[1].c_str());
+  unsigned n = atoi(tokens[allocPos + 1].c_str());
   for(unsigned i = 0; i < n; ++i)
   {
-    memTarget.AddEmptyMemBlock(lineNum);
-    FindLabel(memTarget);
+    data.AddEmptyMemBlock(lineNum);
+    FindLabel(data);
   }
 }
 
-void Parser::Words(Memory& data,Memory& inst)
+void Parser::Words(Memory& data, unsigned wordsPos)
 {
-  Memory& memTarget = state == P_INST ? inst : data; // hack around because references must be initialized immediately
   switch(state)
   {
     case P_INST:
-      memTarget = inst;
       break;
     case P_DATA:
-      memTarget = data;
       break;
     case P_INST_HEADER:
+			exitWithOutput("Found a .words tag, but expecting a full .text header line.");
     case P_DATA_HEADER:
-      exitWithOutput("Found an .word tag, but expecting the header values [firstAddress] [Bytes per address] before defining an alloc.");
+      exitWithOutput("Found a .words tag, but expecting a full .data header line.");
       break;
     case P_NONE:
-      exitWithOutput("Found an .word tag, but we're not in a .data or .text block.");
+      exitWithOutput("Found a .words tag, but we're not in a .data or .text block.");
       break;
   }
-  for(unsigned i = 1; i < tokens.size(); ++i)
+  for(unsigned i = wordsPos + 1; i < tokens.size(); ++i)
   {
     if(!isNumber(tokens[i]))
     {
@@ -206,21 +234,19 @@ void Parser::Words(Memory& data,Memory& inst)
       exitWithOutput(s.str().c_str());
       return;
     }
-    memTarget.AddEmptyMemBlock(lineNum);
-    memTarget.GetBack()->SetContentsGeneric(tokens[i]);
-    FindLabel(memTarget);
+    data.AddEmptyMemBlock(lineNum);
+    data.GetBack()->SetContentsGeneric(tokens[i]);
+    FindLabel(data);
   }
 }
 
 void Parser::SetupHeader(Memory& memTarget)
 {
-  if(tokens.size() < 3)
-  {
-    exitWithOutput("Found .data or .text tag with no address specifiers. Expecting format [.data/.text] [starting address] [block size]");
-    return;
-  }
-  memTarget.firstAddress = atoi(tokens[1].c_str());
-  memTarget.addressAdder = atoi(tokens[2].c_str());
+	if(tokens.size() > 2)
+	{
+	  memTarget.firstAddress = atoi(tokens[1].c_str());
+	  memTarget.addressAdder = atoi(tokens[2].c_str());
+	}
 }
 
 void Parser::FindLabel(Memory& memTarget)
@@ -256,4 +282,13 @@ bool Parser::isNumber(std::string& str)
       return false;
   }
   return true;
+}
+
+int Parser::contains(StringVec_t& toks, std::string str)
+{
+	for(unsigned i = 0; i < toks.size(); i++)
+	{
+		if(toks[i].compare(str) == 0) return i;
+	}
+	return -1;
 }

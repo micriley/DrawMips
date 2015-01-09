@@ -22,13 +22,17 @@
 #include "qdisplay.h"
 
 #define SSTR( x ) dynamic_cast< std::ostringstream & >(( std::ostringstream() << std::dec << x ) ).str()
+#define CPU_NORMAL_X_POS  0.3125
+#define CPU_NORMAL_Y_POS	0.0625
+#define CPU_NORMAL_WIDTH  0.375
+#define CPU_NORMAL_HEIGHT 0.875
   
 CPU::CPU(QDisplay& d0, Computer& c0):d(d0),c(c0),regMem(MEM_REG),pcMem(),ciMem(MEM_INST),pc(0),halted(false)
 {
-  cpuRect = QRect(d.width()/2 - d.width() / 8 - d.width() / 16, // x
-                  d.height()  / 8 - d.height()/16,              // y
-                  d.width()/2 - d.width() / 8,                  // w
-                  d.height() - d.height() / 8 + 8);// h
+  cpuRect = QRect(d.width()*CPU_NORMAL_X_POS, // x
+                  d.height()*CPU_NORMAL_Y_POS,              // y
+                  d.width()*CPU_NORMAL_WIDTH,                  // w
+                  d.height()*CPU_NORMAL_HEIGHT + 8);// h
   
   QPainter p(d.Pixmap());
   p.drawRect(cpuRect);
@@ -42,36 +46,31 @@ CPU::CPU(QDisplay& d0, Computer& c0):d(d0),c(c0),regMem(MEM_REG),pcMem(),ciMem(M
 void CPU::InitRegisters(unsigned n)
 {
   QPainter p(d.Pixmap());
-  QPoint where1(cpuRect.x() + 4, cpuRect.y() + 4);
-  QRect  size1(where1.x(), where1.y(), cpuRect.width() - 8, 16);
+  QPoint where1(cpuRect.x(), cpuRect.y() + 20);
+  QRect  size1(where1.x(), where1.y(), cpuRect.width() - 32, 16);
   // Draw the current instruction register first then others below
-  QRect cTxt = p.boundingRect(size1, Qt::AlignCenter, "Current Instruction");
   ciMem.LoadEmpty(1, where1, size1, true);
-  ciMem.Draw(p, where1, size1, false, "Current Instruction");
-  ciTitleRect = cTxt;
+  ciMem.Draw(p, where1, size1, false, "", "IR");
   
   // Now program counter
   QPoint where2(where1);
   QRect  size2(size1);
-  where2.setY(where2.y() + cTxt.height() + size1.height() + 8);
+  where2.setY(where2.y() + size1.height() + 8);
   size2.moveTo(where2);
-  cTxt = p.boundingRect(size2, Qt::AlignCenter, "PC");
   pcMem.LoadEmpty(1, where2, size2, true);
-  pcMem.Draw(p, where2, size2, false, "PC");
+  pcMem.Draw(p, where2, size2, false, "", "PC");
   // Set the initial PC to the first address of inst memory
-  SetPC(c.inst.firstAddress);
-  pcTitleRect = cTxt;
-  
+  SetPC(c.inst.firstAddress - c.inst.addressAdder);
   // Now registers
   QPoint where3(where2);
   QRect size3(size2);
-  where3.setY(where3.y() + cTxt.height() + size2.height() + 8);
+	where3.setX(where2.x());
+  where3.setY(where3.y() + size2.height());
   size2.moveTo(where3);
-  cTxt = p.boundingRect(size2, Qt::AlignCenter, "Registers");
+  regTitleRect = p.boundingRect(size2, Qt::AlignCenter, "Registers");
   size3.setWidth(size3.width() - 12);
   regMem.LoadEmpty(n, where3, size3, true);
   regMem.Draw(p, where3, size3, true, "Registers");
-  regTitleRect = cTxt;
 
   d.Update();
 }
@@ -169,9 +168,9 @@ void CPU::ExecuteNextInstruction()
   //NOTE: Refactor
   MemoryLocation* ml = ciMem.GetLocation(0);
   std::string currentInstString = ciMem.GetContentsString(0);
-  Instruction currentInst(currentInstString,c.data,ml->sourceLine);
+  Instruction currentInst(currentInstString,c.data,c.inst,ml->sourceLine);
   c.stepType = Computer::RNI;   // If no animation needed for instruction
-  c.nextStepTime = d.msTime + SLOW_STEP; // If no animation
+  c.nextStepTime = d.msTime + c.SLOW_STEP; // If no animation
   unsigned reg0;
   unsigned reg1;
   unsigned reg2;
@@ -445,7 +444,7 @@ void CPU::ExecuteNextInstruction()
     c.regTarget = reg0;
     c.readContents = dataContents;
     c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
   break;
   case AND:
     reg0 = currentInst.GetReg(0);
@@ -610,6 +609,15 @@ void CPU::ExecuteNextInstruction()
     {
         const1 = currentInst.GetConst(1);
     }
+		else if(currentInst.operands[1].opType == OP_InstructionTag)
+		{
+			const1 = currentInst.m.FindAddressTag(currentInst.operands[1].Address);
+			if(const1 == -1)
+			{
+				cout << "LW: Address Tag Not Found" << endl;
+				exit(1);
+			}
+		}
     else
     {
       cout << "OOps, expected Const type for operand 1"
@@ -626,7 +634,7 @@ void CPU::ExecuteNextInstruction()
     c.regTarget = reg0;
     c.readContents = c.data.GetContents(c.readAddress);
     c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
   break;
   case SW:          // Store R1, address in R2
     reg0 = currentInst.GetReg(0);
@@ -657,7 +665,7 @@ void CPU::ExecuteNextInstruction()
     c.anim1String = regMem.GetContentsString(reg0);
     c.writeContents = regMem.GetContents(reg0);
     c.stepType = Computer::START_WRITE;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
   break;
   case LH:
     reg0 = currentInst.GetReg(0);
@@ -697,7 +705,7 @@ void CPU::ExecuteNextInstruction()
     c.anim0String = contents;
     c.readContents = newData;
     c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
     c.regTargetObject = &regMem;
     c.regTarget = reg0;
     c.readContents = c.data.GetContents(c.readAddress);
@@ -740,7 +748,7 @@ void CPU::ExecuteNextInstruction()
     c.anim0String = contents;
     c.readContents = newData;
     c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
     c.regTargetObject = &regMem;
     c.regTarget = reg0;
     c.readContents = c.data.GetContents(c.readAddress);
@@ -780,12 +788,12 @@ void CPU::ExecuteNextInstruction()
     newData.SetInt(uWordData,false);
     c.readContents = newData;
     c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
     c.regTargetObject = &regMem;
     c.regTarget = reg0;
     c.readContents = c.data.GetContents(c.readAddress);
     c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
   break;
   case SB:          // Store R1, address in R2
     reg0 = currentInst.GetReg(0);
@@ -824,7 +832,7 @@ void CPU::ExecuteNextInstruction()
     newData.SetInt(wordData,true);
     c.readContents = newData;
     c.stepType = Computer::START_WRITE;
-    c.nextStepTime = d.msTime + FAST_STEP;
+    c.nextStepTime = d.msTime + c.FAST_STEP;
   break;
   case J:
     const1 = currentInst.GetOptype(0) == OP_AddressTag ? offsetToLabel(currentInst.GetAddress(0)) :currentInst.GetConst(0);
@@ -916,7 +924,7 @@ void CPU::StartAnimALU(int regA,int regB,int regOut,std::string aString,std::str
 
 void CPU::FinishAnim()
 {
-  c.nextStepTime = d.msTime + FAST_STEP;
+  c.nextStepTime = d.msTime + c.FAST_STEP;
 }
 
 int CPU::offsetToLabel(std::string label)

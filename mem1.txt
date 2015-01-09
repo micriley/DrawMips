@@ -1,4 +1,4 @@
-100 1
+.data
 53  A
 21  B
 -5 C
@@ -8,3 +8,50 @@
 4 G
 -17 H
 2 I
+.text
+lw $7 A($zero)
+lh $7 D($zero)
+lb $7 E($zero)
+@MyLabel
+@MyLabel2
+@MyLabel3
+@MyLabel4
+lbu $7 E($zero)
+lw $7 A($zero)
+lw $8 F($zero)
+lw $9 F($zero)
+mult $8 $9
+lw $7 A($zero)
+lw $8 B($zero)
+lw $9 C($zero)
+add $10 $7 $9
+addu $11 $7 $8
+sub $12 $7 $9
+subu $13 $7 $8
+addi $14 $7 -1
+addiu $10 $8 -3
+mult $7 $9
+multu $7 $9
+div $7 $8
+divu $7 $9
+mfhi $10
+mflo $10
+lui $10
+and $10 $7 $8
+andi $11 $7 15
+or $12 $7 $8
+ori $13 $7 48
+nor $14 $7 $8
+xori $9 $7 $8
+lw $8 G($zero)
+sll $7 $7 1
+sllv $7 $7 $8
+srl $7 $7 1
+srlv $7 $7 $8
+lw $7 H($zero)
+sra $7 6
+srav $7 $8
+J 1
+AND $7 $7 $7
+lw $7 I($zero)
+JR $31

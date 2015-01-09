@@ -20,9 +20,6 @@ class QDisplay;
 #define NSTEPS3 20
 #define NSTEPSA 40
 #define NSTEPSB 40
-#define QUICK_STEP  0
-#define FAST_STEP 200
-#define SLOW_STEP 500
 class RegisterTarget
 {
 public:
@@ -82,7 +79,8 @@ public:
 public:
   Computer(QDisplay&,
            const std::string& input,
-           unsigned nReg);
+           unsigned nReg,
+					 int fs = 1);
   void LoadDataMem(const std::string& fileName,
             const std::string& t1 = std::string(),    // Title1
             const std::string& t2 = std::string());   // Title2
@@ -107,8 +105,11 @@ public:
   Memory    inst;  // Instruction Memory
   CPU       cpu;   // CPU Element
   ALU       myALU; // ALU struct for drawing and animation calls
-  TimeButtonController timeController;
+  //TimeButtonController timeController; DON'T WORK
   int frameSkip;
+	int SLOW_STEP;
+	int FAST_STEP;
+	int QUICK_STEP;
   // Common vars for animating
   QPoint    anim0; // Starting point of animation
   QPoint    anim1; // Ending point of animation

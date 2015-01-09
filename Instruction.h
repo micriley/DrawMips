@@ -99,16 +99,17 @@ public:
   InstOperand(const std::string& st, OperandType_t);
   OperandType_t opType;
   unsigned      RegNum;   // If OP_Register
-  unsigned      Const;    // If OP_Constant
+  int			      Const;    // If OP_Constant
   std::string   Address;  // If address tag
   unsigned      addressInt;  // The look'ed up value of addrss tag "Address"
 };
 
 class Instruction {
 public:
-  Instruction(const std::string& st,Memory& m0,unsigned lineNum);
+  Instruction(const std::string& st,Memory& m0,Memory& i0,unsigned lineNum);
 public: 
   Memory&       m;
+	Memory&				inst;
   InstLookup    instruction;
   InstOperand   operands[3];
   static string registerMap[];

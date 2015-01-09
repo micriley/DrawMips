@@ -37,14 +37,14 @@ public:
   void ReadInstContent(Memory& inst);
   void ReadDataContent(Memory& data);
   void ReadContent(Memory& memTarget);
-  void Alloc(Memory& data,Memory& inst);
-  void Words(Memory& data,Memory& inst);
+  void Alloc(Memory& data, unsigned allocPos);
+  void Words(Memory& data, unsigned wordsPos);
   void SetupHeader(Memory& memTarget);
   void FindLabel(Memory& memTarget);
-  unsigned FindAddressTag(const std::string&);
   void ParseLine(const std::string&, StringVec_t&);
   void exitWithOutput(const std::string reason);
   bool isNumber(std::string& str);
+	int contains(StringVec_t& toks, const std::string str);
 };
 
 #endif

@@ -214,8 +214,8 @@ char MemoryLocation::GetContentsChar() const
 
 MemMap_t Memory::labelMap;
 
-Memory::Memory(MemType_t mt, int sML)
-  : useAddress(true), memoryType(mt), firstAddress(0), addressAdder(1),  selectedMemLocation(sML)
+Memory::Memory(MemType_t mt, int fA, int aA,int sML)
+  : useAddress(true), memoryType(mt), firstAddress(fA), addressAdder(aA),  selectedMemLocation(sML)
 { //Not much to do here, most work done by Load and Draw
   window = (unsigned int*)malloc(2);
 }
@@ -237,12 +237,11 @@ void Memory::Load(const QPoint& wh, const QRect& sz, bool useAddr)
   useAddress = useAddr;
   where = wh;
   size = sz;
-  
 }
 
 void Memory::Draw(QPainter& p, QPoint& where, QRect& size,
                   bool useAddr, const string& t1, const string& t2)
-{ // where is in/out, in case we have to move contents/rects left due to size
+{
   int widest = size.width();
   for (unsigned i = 0; i < memory.size(); ++i)
   {
@@ -277,13 +276,15 @@ void Memory::Draw(QPainter& p, QPoint& where, QRect& size,
     br = p.boundingRect(size, Qt::AlignCenter, ml.label.c_str());
     if (br.width() > widestAddress) widestAddress = br.width();
   }
+
   QRect r = size;
   r.moveTo(where);
+
   QRect a = r; // Rectangle for addresses
   if (useAddress) r = MoveRectRightBy(r, widestAddress + 1);
   a.setWidth(widestAddress);
   // See if contents exceeds width of the outer box
-  int fudge = 48;
+/*  int fudge = 48;
   if ((r.x() + widestContents) > (768 - fudge))
   {
     int amount = where.x() + widestContents - 768 + fudge;
@@ -291,7 +292,7 @@ void Memory::Draw(QPainter& p, QPoint& where, QRect& size,
     r = MoveRectLeftBy(r, amount);
     a = MoveRectLeftBy(a, amount);
   }
-  
+*/  
   // Draw the titles
   if (!title1.empty())
   {
@@ -304,12 +305,12 @@ void Memory::Draw(QPainter& p, QPoint& where, QRect& size,
   }
   if (!title2.empty())
   {
-    QRect t2 = p.boundingRect(r, Qt::AlignCenter, title2.c_str());
-    p.drawText(r, Qt::AlignCenter, title2.c_str());
-    title2Rect = r;
-    // Adjust rect. locations
-    r = MoveRectDownBy(r, t2.height());
-    a = MoveRectDownBy(a, t2.height());
+    QRect t2 = p.boundingRect(r, Qt::AlignLeft, title2.c_str());
+//		t2 = MoveRectLeftBy(t2, r.width()/2 + 10);
+    p.drawText(t2, Qt::AlignCenter, title2.c_str());
+		r = MoveRectRightBy(r, 18);
+		r.setWidth(size.width() - 14);
+    title2Rect = t2;
   }
   // Draw the rectangles
   unsigned thisAddress = 0; // This still needs some work
@@ -510,17 +511,16 @@ QPoint Memory::GetPointOnMemLoc(unsigned i,float x,float y)
   return p;
 }
 
-unsigned Memory::FindAddressTag(const string& tag)
+int Memory::FindAddressTag(const string& tag)
 {
   for (unsigned i = 0; i < memory.size(); ++i)
     {
       if (memory[i].label == tag)
       {
-        return i + firstAddress; // Found it
+        return i * addressAdder + firstAddress; // Found it
       }
     }
-  cout << "No matching address tag for " << tag << endl;
-  exit(1);
+	return -1;
 }
 
 void Memory::SetContents(const Contents& v, unsigned i)
@@ -541,81 +541,11 @@ void Memory::SetContentsString(const string& v, unsigned i)
   ml->SetContentsString(v);
 }
 
-//Root Parsing function, splits off to read insts and data
-
-
-// Private methods
-// File format is:
-// memoryAddressOffset
-// contents (repeated n times)
-// # are comments
-void Memory::ReadMemoryContents(const string& fileName)
-{
-  //Intialize start state
-  unsigned lineNum = 1;
-  bool labelNextLine = false;
-  std::string label;
-  //Open file
-  ifstream ifs(fileName.c_str());
-  if (!ifs)
-    {
-      cout << "Can't open file " << fileName << endl;
-      exit(1);
-    }
-  ifs >> firstAddress; // Get address offset
-  addressAdder = 0;
-  ifs >> addressAdder; // and increment
-  if (addressAdder == 0) addressAdder = 1;
-  string line0; 
-  getline(ifs,line0); // Get to next line
-  while(ifs)
-    {
-      // read contents
-      string line;
-      getline(ifs, line);
-      lineNum++;
-      StringVec_t tokens;
-      //Get a vector of tokens on this line
-      ParseLine(line, tokens);
-      if (tokens.empty()) continue;
-      if(tokens[0][0] == '@')
-      {
-        int length = tokens[0].size();
-        label = tokens[0].substr(1,length);
-        labelNextLine = true;
-        continue;
-      }
-      memory.push_back(MemoryLocation());
-      //First token is the data
-      memory.back().sourceLine = lineNum;
-      memory.back().index = memory.size() - 1;
-      memory.back().SetContentsGeneric(tokens[0]);
-      //If we allready have a label picked out, set the label to  what we found last line
-      if(labelNextLine)
-      {
-        Memory::labelMap[label] = memory.back();
-        memory.back().SetLabel(label);
-        labelNextLine = false;
-        continue;
-      }
-      //2nd token is the label
-      if (tokens.size() > 1)
-        {
-          memory.back().SetLabel(tokens[1]);
-        }
-    }
-  // Remove last if blank. Safety measure.
-  if (!memory.empty())
-    {
-      if (memory.back().GetContentsString().empty()) memory.pop_back();
-    }
-}
-
 unsigned* Memory::updateRangeToShow()
 {
   int length = memory.size();
   window[0] = selectedMemLocation == -1 ? 0 : std::max(0,selectedMemLocation-VIEW_SIZE/2);
-  window[1] = selectedMemLocation == -1 ? (length-1) : std::min(length,selectedMemLocation+VIEW_SIZE/2);
+  window[1] = selectedMemLocation == -1 ? (length-1) : std::min(length-1,selectedMemLocation+VIEW_SIZE/2);
   return window;
 }
 

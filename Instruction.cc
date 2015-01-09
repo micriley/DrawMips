@@ -64,7 +64,7 @@ InstLookup psuedoInstructionSet[] = {
   InstLookup(string("REM"),    REM)
 };
 
-string Instruction::registerMap[] = {"zero","at","a0","a1","a2","a3","t0","t1","t2","t3","t4","t5","t6","t7","s0","s1","s2","s3","s4","s5","s6","s7","t8","t9","k0","k1","gp","sp","fp","ra"};
+string Instruction::registerMap[] = {"zero","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""};
 char operandSeperators[] = {' ',',','(',')'};
 
 //Utility function for determining numbers in string
@@ -104,7 +104,7 @@ InstOperand::InstOperand(const string& st,OperandType_t type=OP_NONE)
   {
     case(OP_Register):
       if(!isNumber(st0))
-        RegNum = Instruction::getRegisterFromCode(st0);
+				RegNum = Instruction::getRegisterFromCode(st0);
       else
         RegNum = atoi(st0.c_str());
     break;
@@ -128,15 +128,15 @@ InstOperand::InstOperand(const string& st,OperandType_t type=OP_NONE)
 unsigned Instruction::getRegisterFromCode(string& st){
   for(unsigned i=0; i < (sizeof(registerMap)/sizeof(registerMap[0]));i++)
   {
-    if(st.compare(registerMap[i]) == 0)
+    if(!registerMap[i].empty() && st.compare(registerMap[i]) == 0)
       return i;
   }
-  cout << "No such instruction called" << st << endl;
+  cout << "No such register called " << st << endl;
   exit(1);
   return 33;//Change this to a variable later
 }
 
-Instruction::Instruction(const string& st,Memory& m0,unsigned lineNum): m(m0), sourceLine(lineNum)
+Instruction::Instruction(const string& st,Memory& m0,Memory& inst0,unsigned lineNum): m(m0), inst(inst0), sourceLine(lineNum)
 {
   Parse(st);
 }
@@ -222,6 +222,13 @@ void Instruction::Parse(const string& st)
         {
           string tag = operand.Address;
           operand.Const = m.FindAddressTag(tag);
+					if(operand.Const == -1)
+						operand.Const = inst.FindAddressTag(tag);
+					if(operand.Const == -1)
+					{
+					  cout << "No matching address tag for " << tag << endl;
+					  exit(1);
+					}
           operand.opType = OP_Constant;
         }
     }

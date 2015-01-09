@@ -1,0 +1,63 @@
+//Root Parsing function, splits off to read insts and data
+
+
+// Private methods
+// File format is:
+// memoryAddressOffset
+// contents (repeated n times)
+// # are comments
+void Memory::ReadMemoryContents(const string& fileName)
+{
+  //Intialize start state
+  unsigned lineNum = 1;
+  bool labelNextLine = false;
+  std::string label;
+  //Open file
+  ifstream ifs(fileName.c_str());
+  if (!ifs)
+    {
+      cout << "Can't open file " << fileName << endl;
+      exit(1);
+    }
+  while(ifs)
+    {
+      // read contents
+      string line;
+      getline(ifs, line);
+      lineNum++;
+      StringVec_t tokens;
+      //Get a vector of tokens on this line
+      ParseLine(line, tokens);
+      if (tokens.empty()) continue;
+      if(tokens[0][0] == '@')
+      {
+        int length = tokens[0].size();
+        label = tokens[0].substr(1,length);
+        labelNextLine = true;
+        continue;
+      }
+      memory.push_back(MemoryLocation());
+      //First token is the data
+      memory.back().sourceLine = lineNum;
+      memory.back().index = memory.size() - 1;
+      memory.back().SetContentsGeneric(tokens[0]);
+      //If we allready have a label picked out, set the label to  what we found last line
+      if(labelNextLine)
+      {
+        Memory::labelMap[label] = memory.back();
+        memory.back().SetLabel(label);
+        labelNextLine = false;
+        continue;
+      }
+      //2nd token is the label
+      if (tokens.size() > 1)
+        {
+          memory.back().SetLabel(tokens[1]);
+        }
+    }
+  // Remove last if blank. Safety measure.
+  if (!memory.empty())
+    {
+      if (memory.back().GetContentsString().empty()) memory.pop_back();
+    }
+}

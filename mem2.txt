@@ -1,5 +1,17 @@
-100 1
+.data
 # Initial data for Euclids algorithm
 544 M
 119 N
 ?   GCD
+.text
+lw $6,M($0)
+lw $7,N($0)
+div $6,$7
+mfhi $8
+beq $8,$0 @Escape
+move $t1 $t2
+move $t2 $t3
+j -6
+@Escape
+sw $7 GCD($0)
+jr 31
