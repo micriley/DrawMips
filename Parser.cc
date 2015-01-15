@@ -34,10 +34,6 @@ void Parser::ReadMemoryContents(Memory& data, Memory& inst)
     ParseLine(line, tokens);
     if(tokens.empty()) continue;
 		ParseLabel(tokens);
-//    if(tokens[0] == ".alloc")
-//      Alloc(data,inst);
-//    if(tokens[0] == ".word")
-//      Words(data,inst);
     if(state == P_INST)
       ReadInstContent(inst);
     if(state == P_DATA)
@@ -76,6 +72,7 @@ void Parser::ParseLine(const string& st, StringVec_t& tokens)
     while(i < st0.length() && st0[i] == ' ') i++;
     if (i == st0.length()) return;
     string::size_type k = st0.find_first_of(" ", i);
+		if (state != P_INST) k = std::min(k,st0.find_first_of(",", i));
     if (k == string::npos)
     {
       tokens.push_back(st0.substr(i, string::npos));
@@ -92,21 +89,18 @@ void Parser::ParseLine(const string& st, StringVec_t& tokens)
 
 bool Parser::ParseLabel(StringVec_t tokens)
 {
-  if(!tokens[0].empty())
+  if(!tokens[0].empty() && tokens[0].at(tokens[0].size() -1) == ':') //Test for a label
   {
-    if(tokens[0][0] == '@')
-    {
       if(state == P_NONE)
       {
         stringstream ss;
-        ss << "Found label " << tokens[0].substr(1, tokens[0].length()) << " with no memory context." << endl << "Please make sure to include all labels within a .data or .text block";
+        ss << "Found label " << tokens[0].substr(0, tokens[0].length() - 1) << " with no memory context." << endl << "Please make sure to include all labels within a .data or .text block";
         Parser::exitWithOutput(ss.str());
         return false; //Unncessary, but being concise.
-      }     
+      }
       labelNextLine = true;
-      nextLabel = tokens[0].substr(1,tokens[0].length());
+      nextLabel = tokens[0].substr(0,tokens[0].length() - 1);
       return true;
-    }
   }
   return false;
 }
@@ -156,8 +150,6 @@ void Parser::ReadDataContent(Memory& data)
 		{
 	    Parser::exitWithOutput("Found more than 2 tokens on a data line and expected the first token to be a key-label");
 		}
-		labelNextLine = true;
-		nextLabel = tokens[0];
     int allocPos = contains(tokens, std::string(".alloc"));
 		int wordPos  = contains(tokens, std::string(".word"));
 		if(allocPos != -1){ Alloc(data, allocPos); return; } // The Return is a concession to complex alloc words. If you do that then this parser won't handle it

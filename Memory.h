@@ -114,6 +114,7 @@ class Memory
   void ParseLine(const std::string&, StringVec_t&);
   unsigned* updateRangeToShow();
   QPoint GetLockedLeftCenter(unsigned i);
+	void exitWithOutput(const std::string reason);
 private:
   void storeWindowRect(unsigned n);
 public:

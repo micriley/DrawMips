@@ -70,6 +70,7 @@ void CPU::InitRegisters(unsigned n)
   regTitleRect = p.boundingRect(size2, Qt::AlignCenter, "Registers");
   size3.setWidth(size3.width() - 12);
   regMem.LoadEmpty(n, where3, size3, true);
+	regMem.SetContentsInt(0, 0);
   regMem.Draw(p, where3, size3, true, "Registers");
 
   d.Update();
@@ -79,10 +80,6 @@ void CPU::Redraw(QPainter& p)
 {
   p.drawRect(cpuRect);
   p.drawText(titleRect, Qt::AlignCenter, "CPU");
-  // Below are not needed since the memory->Redraw does this
-  //p.drawText(regTitleRect, Qt::AlignCenter, "Registers");
-  //p.drawText(ciTitleRect,  Qt::AlignCenter, "Current Instruction");
-  //p.drawText(pcTitleRect,  Qt::AlignCenter, "PC");
   ciMem.Redraw(p);
   pcMem.Redraw(p);
   regMem.Redraw(p);
@@ -609,9 +606,9 @@ void CPU::ExecuteNextInstruction()
     {
         const1 = currentInst.GetConst(1);
     }
-		else if(currentInst.operands[1].opType == OP_InstructionTag)
+		else if(currentInst.operands[1].opType == OP_AddressTag)
 		{
-			const1 = currentInst.m.FindAddressTag(currentInst.operands[1].Address);
+			const1 = currentInst.data.FindAddressTag(currentInst.operands[1].Address);
 			if(const1 == -1)
 			{
 				cout << "LW: Address Tag Not Found" << endl;
@@ -858,7 +855,7 @@ void CPU::ExecuteNextInstruction()
     reg0vi = GetRegValueInt(reg0);
     reg1vi = GetRegValueInt(reg1);
     const1 = currentInst.GetOptype(2) == OP_InstructionTag ? offsetToLabel(currentInst.GetAddress(0)) :currentInst.GetConst(2);
-    if (reg0vi == reg1vi) SetPC(const1);
+    if (reg0vi == reg1vi) SetPC(const1-pc);
   break;
   case BNE:
     reg0 = currentInst.GetReg(0);
@@ -866,7 +863,7 @@ void CPU::ExecuteNextInstruction()
     reg0vi = GetRegValueInt(reg0);
     reg1vi = GetRegValueInt(reg1);
     const1 = currentInst.GetOptype(2) == OP_InstructionTag ? offsetToLabel(currentInst.GetAddress(2)) :currentInst.GetConst(2);
-    if (reg0vi != reg1vi) SetPC(const1);
+    if (reg0vi != reg1vi) SetPC(const1-pc);
   break;
   }
   FinishAnim();

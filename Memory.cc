@@ -416,6 +416,8 @@ Contents Memory::GetContents(unsigned i)
 
 MemoryLocation* Memory::GetLocation(unsigned i)
 {
+	unsigned index = (i - firstAddress)/addressAdder;
+	if(index > memory.size()) exitWithOutput("Accessing Memory Out Of Bounds");
   return &memory[(i - firstAddress)/addressAdder];
 }
 
@@ -591,4 +593,11 @@ void Memory::ParseLine(const string& st, StringVec_t& tokens)
         }
     }
   return;
+}
+
+void Memory::exitWithOutput(const string reason)
+{
+  cout << "Memory error." << endl;
+  cout << reason << endl;
+  exit(1);
 }

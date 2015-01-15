@@ -108,7 +108,7 @@ class Instruction {
 public:
   Instruction(const std::string& st,Memory& m0,Memory& i0,unsigned lineNum);
 public: 
-  Memory&       m;
+  Memory&       data;
 	Memory&				inst;
   InstLookup    instruction;
   InstOperand   operands[3];

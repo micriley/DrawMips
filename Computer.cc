@@ -443,13 +443,12 @@ void Computer::Step()
     }
     case START_RNI:
     {
-      Redraw(p);
       stepType = RNI;
       break;
     }
     case RNI:
     {
-			cpu.pc += inst.addressAdder;
+			cpu.SetPC(inst.addressAdder);
       inst.selectedMemLocation = (cpu.pc-inst.firstAddress)/inst.addressAdder; //We set the selected inst memory this way to account for jumps
 			inst.updateRangeToShow();
       anim0 = cpu.pcMem.GetTopCenter(0);
@@ -462,6 +461,7 @@ void Computer::Step()
       anim1String = readContents.GetString();
       stepType = START_ANIMATION;
       nextStepType = END_RNI;
+      Redraw(p);
       break;
     }
     case END_RNI:

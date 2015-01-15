@@ -87,11 +87,6 @@ InstOperand::InstOperand(const string& st,OperandType_t type=OP_NONE)
     st0 = st0.substr(1);
     opType = OP_Register;
   }
-  else if(st0[0] == '@')
-  {
-    st0 = st0.substr(1);
-    opType = OP_InstructionTag;
-  }
   else if(isNumber(st0))
   {
     opType = OP_Constant;
@@ -136,7 +131,7 @@ unsigned Instruction::getRegisterFromCode(string& st){
   return 33;//Change this to a variable later
 }
 
-Instruction::Instruction(const string& st,Memory& m0,Memory& inst0,unsigned lineNum): m(m0), inst(inst0), sourceLine(lineNum)
+Instruction::Instruction(const string& st,Memory& m0,Memory& inst0,unsigned lineNum): data(m0), inst(inst0), sourceLine(lineNum)
 {
   Parse(st);
 }
@@ -189,31 +184,6 @@ void Instruction::Parse(const string& st)
       if (k == string::npos) break;
       i = k + 1;
     }
-  //cout << "Instruction is " << instruction
-  //     << " (" << instructionSet[instruction].st << ") " << endl;
-#ifdef VERBOSE_DEBUG
-  cout << "Instruction is " << instruction
-       << " (" << instructionSet[instruction].st << ") ";
-  for (int i = 0; i < 3; ++i)
-    {
-      cout << "Operand Type " << operands[i].opType << " ";
-      switch(operands[i].opType) {
-      case OP_None:
-        cout << "None";
-        break;
-      case OP_Register:
-        cout << "Register " << operands[i].RegNum;
-        break;
-      case OP_Constant:
-        cout << "Constant " << operands[i].Const;
-        break;
-      case OP_AddressTag:
-        cout << "Address " << operands[i].Address;
-        break;
-        }
-      cout << endl;
-    }
-#endif
   // Convert the address tags to constant addresses
   for (int i = 0; i < 3; ++i)
     {
@@ -221,7 +191,7 @@ void Instruction::Parse(const string& st)
       if (operand.opType == OP_AddressTag)
         {
           string tag = operand.Address;
-          operand.Const = m.FindAddressTag(tag);
+          operand.Const = data.FindAddressTag(tag);
 					if(operand.Const == -1)
 						operand.Const = inst.FindAddressTag(tag);
 					if(operand.Const == -1)
