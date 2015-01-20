@@ -415,17 +415,9 @@ void CPU::ExecuteNextInstruction()
     {
       const1 = 0;
     }
-    else if(currentInst.operands[1].opType == OP_Constant)
-    {
-        const1 = currentInst.GetConst(1);
-    }
     else
     {
-      cout << "OOps, expected Const type for operand 1"
-           << " found " << currentInst.operands[1].opType 
-           << "On Instruction" << currentInst.instruction.st
-           << endl;
-      exit(1);
+      const1 = currentInst.GetConst(1);
     }
     //Need a way to just load a constant into mem animation
     upperdata = (const1 << 16);
@@ -608,7 +600,7 @@ void CPU::ExecuteNextInstruction()
     }
 		else if(currentInst.operands[1].opType == OP_AddressTag)
 		{
-			const1 = currentInst.data.FindAddressTag(currentInst.operands[1].Address);
+			const1 = currentInst.data.FindAddressTag(currentInst.operands[1].address);
 			if(const1 == -1)
 			{
 				cout << "LW: Address Tag Not Found" << endl;

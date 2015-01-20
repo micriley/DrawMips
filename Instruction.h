@@ -78,6 +78,12 @@ typedef enum
     OP_InstructionTag,  // Tag for Instruction Memory
     OP_AddressTag       // Tag for Data Memory
   } OperandType_t;
+typedef enum
+	{
+    MF_NONE,
+		MF_HI,
+		MF_LO
+	} MemoryFilter_t;
 
 class InstLookup 
 {
@@ -95,13 +101,15 @@ public:
 class InstOperand 
 {
 public:
-  InstOperand() : opType(OP_NONE), addressInt(0) {}
+  InstOperand() : opType(OP_NONE), addressInt(0), filterPrefix(MF_NONE) {}
   InstOperand(const std::string& st, OperandType_t);
   OperandType_t opType;
   unsigned      RegNum;   // If OP_Register
   int			      Const;    // If OP_Constant
-  std::string   Address;  // If address tag
+  std::string   address;  // If address tag
   unsigned      addressInt;  // The look'ed up value of addrss tag "Address"
+  static string registerPrefix[];
+	MemoryFilter_t filterPrefix; //Filter the value: either HI or LO
 };
 
 class Instruction {

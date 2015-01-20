@@ -400,6 +400,7 @@ void Memory::AddEmptyMemBlock(unsigned& lineNum)
   memory.push_back(MemoryLocation());
   memory.back().sourceLine = lineNum;
   memory.back().index = memory.size() - 1;
+  memory.back().memoryIndex = firstAddress + addressAdder*memory.back().index;
 }
 
 void Memory::AddMemBlock(MemoryLocation& ml, unsigned& lineNum)

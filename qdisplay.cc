@@ -243,7 +243,7 @@ void  QDisplay::Update()
   
   while(!ready && !closed)
     {
-      pthread_yield_np();
+      pthread_yield();
       app.processEvents(); // Wait for 25fps elapsed 
     }
   if (updateRate)
@@ -268,7 +268,7 @@ void  QDisplay::Update(int x, int y, int w, int h, bool noPaint)
       while(!ready && !closed)
         {
           app.processEvents(); // Wait for 25fps elapsed
-          pthread_yield_np();
+          pthread_yield();
         }
       if (updateRate)
         { // Non-zero update rate specified
@@ -395,7 +395,7 @@ void QDisplay::WaitUserTimer(int i, int ms)
   while(!userReady[i])
     {
       app.processEvents();
-      pthread_yield_np();
+      pthread_yield();
     }
 }
 
@@ -417,7 +417,7 @@ void QDisplay::WaitForMS(int endMS)
     {
       //cout << "Waiting ms, now " << msTime << " endtime " << endTime << endl;
       app.processEvents();
-      pthread_yield_np();
+      pthread_yield();
     }
 }
 

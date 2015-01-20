@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+#include <sstream>
 
 #include "Instruction.h"
 #include "Computer.h"
@@ -66,6 +67,7 @@ InstLookup psuedoInstructionSet[] = {
 
 string Instruction::registerMap[] = {"zero","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""};
 char operandSeperators[] = {' ',',','(',')'};
+string InstOperand::registerPrefix[] = {"HI","LO"};
 
 //Utility function for determining numbers in string
 static bool isNumber(const std::string& st)
@@ -82,6 +84,40 @@ InstOperand::InstOperand(const string& st,OperandType_t type=OP_NONE)
   //If nothing is set, OP_None must be the case
   opType = type;
   string st0 = st;
+	//Check for register prefixes
+  unsigned registerPrefixSize = sizeof(registerPrefix)/sizeof(registerPrefix[0]);
+	unsigned prefix = registerPrefixSize + 1;
+	unsigned prefixN = st.size() + 1;
+  if(st.find('[') != string::npos)
+  {
+    prefixN = st.find('[');
+	  for(unsigned i = 0; i < registerPrefixSize; ++i)
+	  {
+		  if(st.find(registerPrefix[i]) != string::npos)
+		  {
+			  prefix = i;
+		  }
+	  }
+	  if(prefix != registerPrefixSize + 1)
+	  {
+		  if(prefix == 0)
+			  filterPrefix = MF_HI;
+		  if(prefix == 1)
+			  filterPrefix = MF_LO;
+		  if(st.find(']') == string::npos)
+		  {
+        cout << "Parsing error." << endl;
+        cout << "Instruction:" << st << endl;
+        cout << "Expecting a closing ]" << endl;
+        exit(1);
+      }
+      else
+      {      
+        st0 = st0.substr(prefixN + 1,st.find(']') - prefixN - 1); //remove the covering []
+      }
+	  }
+  }
+
   if(st0[0] == '$')
   {
     st0 = st0.substr(1);
@@ -109,14 +145,14 @@ InstOperand::InstOperand(const string& st,OperandType_t type=OP_NONE)
     case(OP_ConstantOffset):
     break;
     case(OP_InstructionTag):
-      Address = st0;
+      address = st0;
     break;
-
     case(OP_AddressTag):
-      Address = st0;
+      address = st0;
     break;
     case(OP_NONE):
     break;
+
   }
 }
 
@@ -190,7 +226,7 @@ void Instruction::Parse(const string& st)
       InstOperand& operand = operands[i];
       if (operand.opType == OP_AddressTag)
         {
-          string tag = operand.Address;
+          string tag = operand.address;
           operand.Const = data.FindAddressTag(tag);
 					if(operand.Const == -1)
 						operand.Const = inst.FindAddressTag(tag);
@@ -243,18 +279,40 @@ unsigned Instruction::GetReg(unsigned opnum)
 
 unsigned Instruction::GetConst(unsigned opnum)
 { // Get the register value from the specified operand
-  if (operands[opnum].opType != OP_Constant)
+  unsigned returnValue = 0;
+  std::stringstream ss;
+  if (operands[opnum].opType == OP_AddressTag)
     {
-      cout << "Oops, expected const type for operand " << opnum
+      if(data.labelMap.count(operands[opnum].address)) //If exist in the data map, grab the location
+      {
+        returnValue = data.labelMap[operands[opnum].address].memoryIndex;
+      }
+      else if(data.labelMap.count(operands[opnum].address))
+        returnValue = inst.labelMap[operands[opnum].address].memoryIndex;
+      else
+        {
+          cout << "No mapping found for tag " << operands[opnum].address << endl;
+          exit(1);
+        }
+    }
+  else if (operands[opnum].opType != OP_Constant)
+    {
+      cout << "Oops, expected const or address type for operand " << opnum
            << " found " << operands[opnum].opType << endl;
       exit(1);
     }
-  return operands[opnum].Const;
+  else
+      returnValue = operands[opnum].Const;
+  if(operands[opnum].filterPrefix == MF_HI)
+      returnValue = (returnValue | 0xFF00) >> 16;
+  else if(operands[opnum].filterPrefix == MF_LO)
+      returnValue = returnValue | 0X00FF;
+  return returnValue;
 }
 
 std::string Instruction::GetAddress(unsigned opnum)
 {
-  return operands[opnum].Address;
+  return operands[opnum].address;
 }
 
 OperandType_t Instruction::GetOptype(unsigned opnum)

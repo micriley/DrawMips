@@ -64,6 +64,7 @@ class MemoryLocation {
   std::string label;
   unsigned sourceLine;  //Actual sourceLine for the memory location
   unsigned index;       //index within a Memory Object
+  unsigned memoryIndex; //The label number that the memory actually references
 };
 
 typedef std::vector<MemoryLocation> MemVec_t;
