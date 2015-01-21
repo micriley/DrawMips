@@ -304,9 +304,9 @@ unsigned Instruction::GetConst(unsigned opnum)
   else
       returnValue = operands[opnum].Const;
   if(operands[opnum].filterPrefix == MF_HI)
-      returnValue = (returnValue | 0xFF00) >> 16;
+      returnValue = (returnValue & 0xFFFF0000) >> 16;
   else if(operands[opnum].filterPrefix == MF_LO)
-      returnValue = returnValue | 0X00FF;
+      returnValue = returnValue & 0X0000FFFF;
   return returnValue;
 }
 

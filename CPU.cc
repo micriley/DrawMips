@@ -421,10 +421,8 @@ void CPU::ExecuteNextInstruction()
     }
     //Need a way to just load a constant into mem animation
     upperdata = (const1 << 16);
-    lowerdata = (reg0vi << 16) >> 16;
-    luiData = upperdata & lowerdata;
     dataContents = Contents();
-    dataContents.SetInt(luiData,false);
+    dataContents.SetInt(upperdata,false);
     //LUI should see the "upper bits" going to the register
     newData = Contents();
     newData.SetInt(upperdata,false);

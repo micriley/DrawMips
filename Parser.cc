@@ -29,6 +29,11 @@ void Parser::ReadMemoryContents(Memory& data, Memory& inst)
   while(ifs)
   {
     getline(ifs,line); // Get to next line
+    char offendingChars[] = "\r\n"; //Strip out these characters.
+    for(unsigned int i = 0; i < strlen(offendingChars); ++i)
+    {
+      line.erase(std::remove(line.begin(), line.end(), offendingChars[i]), line.end());
+    }
     state = UpdateState(line);
     lineNum++;
     ParseLine(line, tokens);
