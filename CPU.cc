@@ -426,12 +426,6 @@ void CPU::ExecuteNextInstruction()
     //LUI should see the "upper bits" going to the register
     newData = Contents();
     newData.SetInt(upperdata,false);
-    c.anim1String = newData.GetString();
-    c.regTargetObject = &regMem;
-    c.regTarget = reg0;
-    c.readContents = dataContents;
-    c.stepType = Computer::START_READ;
-    c.nextStepTime = d.msTime + c.FAST_STEP;
   break;
   case AND:
     reg0 = currentInst.GetReg(0);
@@ -845,7 +839,7 @@ void CPU::ExecuteNextInstruction()
     reg0vi = GetRegValueInt(reg0);
     reg1vi = GetRegValueInt(reg1);
     const1 = currentInst.GetOptype(2) == OP_InstructionTag ? offsetToLabel(currentInst.GetAddress(0)) :currentInst.GetConst(2);
-    if (reg0vi == reg1vi) SetPC(const1-pc);
+    if (reg0vi == reg1vi) SetPC(const1-pc-4);
   break;
   case BNE:
     reg0 = currentInst.GetReg(0);
@@ -853,7 +847,7 @@ void CPU::ExecuteNextInstruction()
     reg0vi = GetRegValueInt(reg0);
     reg1vi = GetRegValueInt(reg1);
     const1 = currentInst.GetOptype(2) == OP_InstructionTag ? offsetToLabel(currentInst.GetAddress(2)) :currentInst.GetConst(2);
-    if (reg0vi != reg1vi) SetPC(const1-pc);
+    if (reg0vi != reg1vi) SetPC(const1-pc-4);
   break;
   }
   FinishAnim();
